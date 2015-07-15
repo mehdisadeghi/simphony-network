@@ -37,6 +37,10 @@ Requirements
 
 .. _msgpack-python: https://pypi.python.org/pypi/msgpack-python/
 
+- `msgpack-numpy`_ >= 0.3.4
+
+.. _msgpack-numpy: https://pypi.python.org/pypi/msgpack-numpy
+
 - `zerorpc`_ >= 0.5.1
 
 .. _zerorpc: http://www.zerorpc.io/
@@ -45,6 +49,11 @@ Requirements
 
 .. _Fabric: http://www.fabfile.org/
 
+
+.. note::
+  `pyzmq` package will try to find a local `libzmq` library or otherwise will
+  try to compile it as an extension. In this case proper build tools should be
+  available on local machine, including a C compiler.
 
 Installation
 ------------

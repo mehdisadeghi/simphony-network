@@ -37,7 +37,7 @@ Requirements
 
 .. _msgpack-python: https://pypi.python.org/pypi/msgpack-python/
 
-- `msgpack-numpy`_ >= 0.3.4
+- `msgpack-numpy`_ >= 0.3.6
 
 .. _msgpack-numpy: https://pypi.python.org/pypi/msgpack-numpy
 

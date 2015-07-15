@@ -5,3 +5,4 @@ msgpack-python>=0.4.6
 msgpack-numpy>=0.3.6
 zerorpc>=0.5.1
 fabric>=1.10.2
+blinker>=1.3

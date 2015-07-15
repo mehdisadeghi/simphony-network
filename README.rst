@@ -49,6 +49,9 @@ Requirements
 
 .. _Fabric: http://www.fabfile.org/
 
+- `blinker`_ >= 1.3
+
+.. _blinker: http://pythonhosted.org/blinker/
 
 .. note::
   `pyzmq` package will try to find a local `libzmq` library or otherwise will

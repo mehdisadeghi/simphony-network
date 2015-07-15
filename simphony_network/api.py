@@ -60,7 +60,7 @@ class SimphonyAPI(object):
         wrapper_id: str
             uuid string of the wrapper's id
         """
-        raise NotImplementedError()
+        return self._manager.get_wrapper_state(wrapper_id)
 
     def add_lattice(self, wrapper_id, lattice):
         """Add lattice to the correspoinding modeling engine
@@ -80,7 +80,7 @@ class SimphonyAPI(object):
             information.
 
         """
-        raise NotImplementedError()
+        return self._manager.add_latice(wrapper_id, lattice)
 
     def add_mesh(self, wrapper_id, mesh):
         """Add mesh to the modeling engine
@@ -97,7 +97,7 @@ class SimphonyAPI(object):
             stored inside the modeling-engine. See get_mesh for more
             information.
         """
-        raise NotImplementedError()
+        return self._manager.add_mesh(wrapper_id, mesh)
 
     def add_particles(self, wrapper_id, particles):
         """Add particle container to the corresponding modeling engine
@@ -117,7 +117,7 @@ class SimphonyAPI(object):
             get_particles for more information.
 
         """
-        raise NotImplementedError()
+        return self._manager.add_particles(wrapper_id, particles)
 
     def delete_lattice(self, wrapper_id, name):
         """Delete a lattice
@@ -128,7 +128,7 @@ class SimphonyAPI(object):
             name of lattice to be deleted
 
         """
-        raise NotImplementedError()
+        return self._manager.delete_lattice(wrapper_id, name)
 
     def delete_mesh(self, wrapper_id, name):
         """Delete a mesh
@@ -139,7 +139,7 @@ class SimphonyAPI(object):
             name of mesh to be deleted
 
         """
-        raise NotImplementedError()
+        return self._manager.delete_mesh(wrapper_id, name)
 
     def delete_particles(self, wrapper_id, name):
         """Delete a particle container for the corresponding modeling engine
@@ -152,7 +152,7 @@ class SimphonyAPI(object):
             name of particle container to be deleted
 
         """
-        raise NotImplementedError()
+        return self._manager.delete_particles(wrapper_id, name)
 
     def get_lattice(self, wrapper_id, name):
         """ Get lattice
@@ -165,7 +165,7 @@ class SimphonyAPI(object):
         ABCLattice
 
         """
-        raise NotImplementedError()
+        return self._manager.get_lattice(wrapper_id, name)
 
     def get_mesh(self, wrapper_id, name):
         """ Get mesh
@@ -178,7 +178,7 @@ class SimphonyAPI(object):
         ABCMesh
 
         """
-        raise NotImplementedError()
+        return self._manager.get_mesh(wrapper_id, name)
 
     def get_particles(self, wrapper_id, name):
         """ Get particle container from the corresponding modeling engine.
@@ -198,7 +198,7 @@ class SimphonyAPI(object):
         ABCParticles
 
         """
-        raise NotImplementedError()
+        return self._manager.get_particles(wrapper_id, name)
 
     def get_wrapper_state(self, wrapper_id):
         """ Get the current state of the given wrapper.

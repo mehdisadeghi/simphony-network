@@ -23,14 +23,14 @@ class SimphonyManager(object):
         # A dictionary store to keep created wrappers
         self._wrappers = {}
 
-        # Find any subclass of ABCModelingEngine which is loaded into
-        # `simphony.engine` entry point
-        self._find_wrappers()
-
         # This dictionary keeps results of aforementioned query. Name
         # of wrapper class would be the key and the type (class) would
         # be the value.
         self._wrapper_mapping = {}
+
+        # Find any subclass of ABCModelingEngine which is loaded into
+        # `simphony.engine` entry point
+        self._find_wrappers()
 
     def _find_wrappers(self):
         """Find all the loaded wrappers in SimPhoNy entry point"""
@@ -42,10 +42,10 @@ class SimphonyManager(object):
             for k, v in module.__dict__.iteritems():
                 # If the item is an Engine class add it to the mapping
                 if inspect.isclass(v) and issubclass(v, ABCModelingEngine) \
-                    and v is not in (ABCModelingEngine, ProxyEngine):
+                    and v not in (ABCModelingEngine, ProxyEngine):
                     # Add the type to the mappping dictionary
                     self._wrapper_mapping[k] = v
-        self.logger.info('%s wrappers loaded from simphony.engine entry points.', % len(self._wrapper_mapping))
+        self.logger.info('%s wrappers loaded from simphony.engine entry points.' % len(self._wrapper_mapping))
 
     def create_wrapper(self, wrapper_type, **kwargs):
         """Create a new wrapper of given type and add it to the wrapper store.
@@ -61,8 +61,10 @@ class SimphonyManager(object):
 
         # Create a new uuid
         wrapper_id = uuid.uuid4()
+
         # Instanciate the wrapper
         self._wrappers[str(wrapper_id)] = self._wrapper_mapping[wrapper_type]()
+
         self.logger.info('Wrapper %s created for %s engine.' % (wrapper_id, wrapper_type))
 
         return str(wrapper_id)
@@ -76,7 +78,7 @@ class SimphonyManager(object):
 
         Will raise EngineNotFound error in case of not existing wrapper.
         """
-        pass
+        raise NotImplementedError()
 
     def add_lattice(self, id, lattice):
         """Add lattice to the correspoinding modeling engine
@@ -96,7 +98,7 @@ class SimphonyManager(object):
             information.
 
         """
-        pass
+        raise NotImplementedError()
 
     def add_mesh(self, mesh):
         """Add mesh to the modeling engine
@@ -113,7 +115,7 @@ class SimphonyManager(object):
             stored inside the modeling-engine. See get_mesh for more
             information.
         """
-        pass
+        raise NotImplementedError()
 
     def add_particles(self, id, particles):
         """Add particle container to the corresponding modeling engine
@@ -133,7 +135,7 @@ class SimphonyManager(object):
             get_particles for more information.
 
         """
-        pass
+        raise NotImplementedError()
 
     def delete_lattice(self, name):
         """Delete a lattice
@@ -144,7 +146,7 @@ class SimphonyManager(object):
             name of lattice to be deleted
 
         """
-        pass
+        raise NotImplementedError()
 
     def delete_mesh(self, name):
         """Delete a mesh
@@ -155,7 +157,7 @@ class SimphonyManager(object):
             name of mesh to be deleted
 
         """
-        pass
+        raise NotImplementedError()
 
     def delete_particles(self, id, name):
         """Delete a particle container for the corresponding modeling engine
@@ -168,7 +170,7 @@ class SimphonyManager(object):
             name of particle container to be deleted
 
         """
-        pass
+        raise NotImplementedError()
 
     def get_lattice(self, name):
         """ Get lattice
@@ -181,7 +183,7 @@ class SimphonyManager(object):
         ABCLattice
 
         """
-        pass
+        raise NotImplementedError()
 
     def get_mesh(self, name):
         """ Get mesh
@@ -194,7 +196,7 @@ class SimphonyManager(object):
         ABCMesh
 
         """
-        pass
+        raise NotImplementedError()
 
     def get_particles(self, id, name):
         """ Get particle container from the corresponding modeling engine.
@@ -214,7 +216,7 @@ class SimphonyManager(object):
         ABCParticles
 
         """
-        pass
+        raise NotImplementedError()
 
     def get_wrapper_state(self, wrapper_id):
         """ Get the current state of the given wrapper.
@@ -233,4 +235,8 @@ class SimphonyManager(object):
             raise Exception('Wrapper[%s] does not exist.' % wrapper_id)
 
         # Instanciate the wrapper
-        return self._wrappers[wrapper_id].get_state()
+        #return self._wrappers[wrapper_id].get_state()
+
+        # We have to either introduce WrapperStore to keep track of wrapper states
+        # or add state to ABCModelingEngine interface
+        raise NotImplementedError()

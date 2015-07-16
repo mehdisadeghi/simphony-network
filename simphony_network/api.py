@@ -24,7 +24,12 @@ class SimphonyAPI(object):
         """
         return msg
 
-    def create_wrapper(self, wrapper_type, **kwargs):
+    def create_wrapper(self, wrapper_type,
+                             boundary_conditions,
+                             system_parameters,
+                             computational_methods,
+                             initial_state_data,
+                             **kwargs):
         """Create a new wrapper of given type and add it to the wrapper store.
 
         Parameters
@@ -36,12 +41,30 @@ class SimphonyAPI(object):
             TODO: This should be changed because it allows to run any arbitrary
             code which is loaded into that entry point.
 
+        boundary_conditions: DataContainer
+            boundary conditions
+
+        system_parameters: DataContainer
+            boundary conditions
+
+        computational_methods: DataContainer
+            boundary conditions
+
+        initial_state_data: dict
+            contains 'lattice', 'mesh' and 'particle' keys each with a
+            corresponding list containing the elements.
+
         Returns
-        ------
+        -------
         str
             a uuid string identifying the wrapper
         """
-        return self._manager.create_wrapper(wrapper_type, **kwargs)
+        return self._manager.create_wrapper(wrapper_type,
+                                            boundary_conditions,
+                                            system_parameters,
+                                            computational_methods,
+                                            initial_state_data,
+                                            **kwargs)
 
     def run_wrapper(self, wrapper_id):
         """Run the modeling engine recognized by the given id.

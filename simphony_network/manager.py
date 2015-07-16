@@ -18,7 +18,7 @@ class SimphonyManager(object):
     """Middleware between public API and SimPhoNy framework"""
     def __init__(self, config):
         self.config = config
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('simphony')
 
         # A dictionary store to keep created wrappers
         self._wrappers = {}
@@ -47,26 +47,72 @@ class SimphonyManager(object):
                     self._wrapper_mapping[k] = v
         self.logger.info('%s wrappers loaded from simphony.engine entry points.' % len(self._wrapper_mapping))
 
-    def create_wrapper(self, wrapper_type, **kwargs):
+    def create_wrapper(self, wrapper_type,
+                             boundary_conditions,
+                             system_parameters,
+                             computational_methods,
+                             initial_state_data,
+                              **kwargs):
         """Create a new wrapper of given type and add it to the wrapper store.
 
         Parameters
         ----------
         wrapper_type: str
             one of the existing wrappers in simphony.engine
+
+        boundary_conditions: DataContainer
+            boundary conditions
+
+        system_parameters: DataContainer
+            boundary conditions
+
+        computational_methods: DataContainer
+            boundary conditions
+
+        initial_state_data: dict
+            contains 'lattice', 'mesh' and 'particle' keys each with a
+            corresponding list containing the elements.
+
+        Returns
+        -------
+        str
+            a uuid string identifying the wrapper
         """
         # Check if wrapper is recognized
         if wrapper_type not in self._wrapper_mapping:
+            self.logger.error('Wrapper %s is not registered.' % wrapper_type)
             raise Exception('Wrapper %s is not registered.' % wrapper_type)
 
         # Create a new uuid
         wrapper_id = uuid.uuid4()
 
         # Instanciate the wrapper
-        self._wrappers[str(wrapper_id)] = self._wrapper_mapping[wrapper_type]()
+        wrapper = self._wrapper_mapping[wrapper_type]()
 
+        # Assign model data to the wrapper
+        wrapper.BC = boundary_conditions
+        wrapper.CM = computational_methods
+        wrapper.SP = system_parameters
+
+        # Report back
+        self.logger.debug('Model data assigned to the wrapper %s' % wrapper_id)
+
+        # Add initial state data
+        if 'lattice' in initial_state_data:
+            for lat in initial_state_data['lattice']:
+                wrapper.add_latice(lat)
+        elif 'mesh' in initial_state_data:
+            raise NotImplementedError('Adding mesh is not yet implemented.')
+        elif 'particle' in initial_state_data:
+            raise NotImplementedError('Adding particle is not yet implemented.')
+
+        # Keep the reference to the wrapper
+        self._wrappers[str(wrapper_id)] = wrapper
+
+        # Report back
         self.logger.info('Wrapper %s created for %s engine.' % (wrapper_id, wrapper_type))
 
+        # Reutrn the wrapper id
         return str(wrapper_id)
 
     def run_wrapper(self, id):

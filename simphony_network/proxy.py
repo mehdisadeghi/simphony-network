@@ -7,6 +7,7 @@ need to know about. They have to wrap their normal wrapper instances inside
 this class to take advantage of SimPhoNy network layer.
 """
 import logging
+from threading import Thread
 
 import zerorpc
 from fabric.api import settings
@@ -22,7 +23,7 @@ class ProxyEngine(ABCModelingEngine):
     def __init__(self, engine, host, port=8020):
         # Store the engine, we only need to extract some information from this
         # engine, actually we don't need it at all.
-        self._local_engine = engine
+        self._engine = engine
 
         self._host = host
         self._port = port
@@ -40,8 +41,8 @@ class ProxyEngine(ABCModelingEngine):
         # Keep the id of the remote wrapper internally.
         self._wrapper_id = None
 
-        # Initialize the remote server
-        self._init_remote()
+        # Initial state data
+        self._state_data = {}
 
     def _init_remote(self):
         """Install and run simphony on remote server."""
@@ -53,21 +54,80 @@ class ProxyEngine(ABCModelingEngine):
             #deploy()
 
             # Start the server on remote machine
-            from threading import Thread
-            t = Thread(target=start)
-            t.start()
-            #import gevent
-            #g = gevent.spawn(start)
-            #g.start()
+            start()
 
+    @property
+    def BC(self):
+        """A proxy for remote BC"""
+        return self._engine.BC
+
+    @BC.setter
+    def BC(self, value):
+        """Set boundary conditions on remote engine.
+
+        Parameters
+        ----------
+        value: DataContainer
+            a dictionary of boundary conditions
+        """
+        raise NotImplementedError('Changing BC is not allowed after initializing the proxy.')
+
+    @property
+    def SP(self):
+        """A proxy for remote SP"""
+        return self._engine.SP
+
+    @SP.setter
+    def SP(self, value):
+        """Set system parameters on remote engine.
+
+        Parameters
+        ----------
+        value: DataContainer
+            a dictionary of system parameters
+        """
+        raise NotImplementedError('Changing SP is not allowed after initializing the proxy.')
+
+    @property
+    def CM(self):
+        """A proxy for remote CM"""
+        return self._engine.CM
+
+    @CM.setter
+    def CM(self, value):
+        """Set computational methods on remote engine.
+
+        Parameters
+        ----------
+        value: DataContainer
+            a dictionary of computational methods
+        """
+        raise NotImplementedError('Changing CM is not allowed after initializing the proxy.')
+
+    def _get_wrapper_name(self):
+        """Return the name of the wrapper."""
+        return type(self._engine).__name__
 
     def run(self):
         """Run the wrapper on the remote host."""
-        # Extract wrapper's name out of its type information
-        wrapper_name = type(self._local_engine).__name__
+        # Initialize the remote server
+        t = Thread(target=self._init_remote)
+        # The thread will terminate if the parent process terminates.
+        # this will consequently terminates the server on the remote machine.
+        t.setDaemon(True)
+        # Start the thread
+        t.start()
 
-        # First create the wrapper
-        self._wrapper_id = self._remote.create_wrapper(wrapper_name)
+        # Extract wrapper's name out of its type information
+        wrapper_name = self._get_wrapper_name()
+
+        # First create the wrapper along with passing model data
+        self._wrapper_id = self._remote.create_wrapper(wrapper_name,
+                                                       self._engine.BC,
+                                                       self._engine.SP,
+                                                       self._engine.CM,
+                                                       self._state_data)
+        print('Got the id: %s' % self._wrapper_id)
         logging.info('Wrapper %s created.' % self._wrapper_id)
 
         # Now issue the run command
@@ -77,13 +137,11 @@ class ProxyEngine(ABCModelingEngine):
         return self._wrapper_id
 
 
-    def add_lattice(self, id, lattice):
+    def add_lattice(self, lattice):
         """Add lattice to the correspoinding modeling engine
 
         Parameters
         ----------
-        id: str
-            the modeling engine's id
         lattice : ABCLattice
             lattice to be added.
 
@@ -95,7 +153,16 @@ class ProxyEngine(ABCModelingEngine):
             information.
 
         """
-        raise NotImplementedError()
+        if self._wrapper_id is not None:
+            raise Exception('Can not change state data after running the wrapper.')
+
+        # Add latice to the engine
+        self._engine.add_lattice(lattice)
+
+        # Queue the lattice to be added to the remote engine
+        if 'lattice' not in self._state_data:
+            self._state_data['lattice'] = []
+        self._state_data['lattice'].append(lattice)
 
     def add_mesh(self, mesh):
         """Add mesh to the modeling engine
@@ -114,13 +181,11 @@ class ProxyEngine(ABCModelingEngine):
         """
         raise NotImplementedError()
 
-    def add_particles(self, id, particles):
+    def add_particles(self, particles):
         """Add particle container to the corresponding modeling engine
 
         Parameters
         ----------
-        id: str
-            the modeling engine's id
         particles: ABCParticles
             particle container to be added.
 
@@ -156,13 +221,11 @@ class ProxyEngine(ABCModelingEngine):
         """
         raise NotImplementedError()
 
-    def delete_particles(self, id, name):
+    def delete_particles(self, name):
         """Delete a particle container for the corresponding modeling engine
 
         Parameters
         ----------
-        id: str
-            the modeling engine's id
         name: str
             name of particle container to be deleted
 
@@ -195,7 +258,7 @@ class ProxyEngine(ABCModelingEngine):
         """
         raise NotImplementedError()
 
-    def get_particles(self, id, name):
+    def get_particles(self, name):
         """ Get particle container from the corresponding modeling engine.
 
         The returned particle container can be used to query and update the
@@ -203,8 +266,6 @@ class ProxyEngine(ABCModelingEngine):
 
         Parameters
         ----------
-        id: str
-            the modeling engine's id
         name: str
             name of particle container
 

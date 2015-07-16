@@ -115,23 +115,27 @@ class SimphonyManager(object):
         # Reutrn the wrapper id
         return str(wrapper_id)
 
-    def run_wrapper(self, id):
+    def run_wrapper(self, wrapper_id):
         """Run the modeling engine recognized by the given id.
 
         Run the modeling engine using the configured settings (e.g. CM, BC,
         and SP) and the configured state data (e.g. particle, mesh and
         lattice data).
 
-        Will raise EngineNotFound error in case of not existing wrapper.
+        Parameters
+        ----------
+        wrapper_: str
+            the modeling engine's id
         """
-        raise NotImplementedError()
+        wrapper = self._wrappers[wrapper_id]
+        wrapper.run()
 
-    def add_lattice(self, id, lattice):
+    def add_lattice(self, wrapper_id, lattice):
         """Add lattice to the correspoinding modeling engine
 
         Parameters
         ----------
-        id: str
+        wrapper_id: str
             the modeling engine's id
         lattice : ABCLattice
             lattice to be added.
@@ -146,7 +150,7 @@ class SimphonyManager(object):
         """
         raise NotImplementedError()
 
-    def add_mesh(self, mesh):
+    def add_mesh(self, wrapper_id, mesh):
         """Add mesh to the modeling engine
 
         Parameters
@@ -163,12 +167,12 @@ class SimphonyManager(object):
         """
         raise NotImplementedError()
 
-    def add_particles(self, id, particles):
+    def add_particles(self, wrapper_id, particles):
         """Add particle container to the corresponding modeling engine
 
         Parameters
         ----------
-        id: str
+        wrapper_id: str
             the modeling engine's id
         particles: ABCParticles
             particle container to be added.
@@ -205,12 +209,12 @@ class SimphonyManager(object):
         """
         raise NotImplementedError()
 
-    def delete_particles(self, id, name):
+    def delete_particles(self, wrapper_id, name):
         """Delete a particle container for the corresponding modeling engine
 
         Parameters
         ----------
-        id: str
+        wrapper_id: str
             the modeling engine's id
         name: str
             name of particle container to be deleted
@@ -244,7 +248,7 @@ class SimphonyManager(object):
         """
         raise NotImplementedError()
 
-    def get_particles(self, id, name):
+    def get_particles(self, wrapper_id, name):
         """ Get particle container from the corresponding modeling engine.
 
         The returned particle container can be used to query and update the
@@ -252,7 +256,7 @@ class SimphonyManager(object):
 
         Parameters
         ----------
-        id: str
+        wrapper_id: str
             the modeling engine's id
         name: str
             name of particle container

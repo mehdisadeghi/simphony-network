@@ -8,8 +8,6 @@ import os
 from fabric.api import cd, env, prefix, run, task, settings
 from fabric.operations import put
 
-env.hosts = ['pc-p115']
-
 
 @task
 def setup_env():

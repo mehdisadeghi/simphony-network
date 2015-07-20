@@ -25,10 +25,7 @@ class SimphonyAPI(object):
         return msg
 
     def create_wrapper(self, wrapper_type,
-                             boundary_conditions,
-                             system_parameters,
-                             computational_methods,
-                             initial_state_data,
+                             cuds,
                              **kwargs):
         """Create a new wrapper of given type and add it to the wrapper store.
 
@@ -41,18 +38,19 @@ class SimphonyAPI(object):
             TODO: This should be changed because it allows to run any arbitrary
             code which is loaded into that entry point.
 
-        boundary_conditions: DataContainer
-            boundary conditions
+        cuds: CUDSModel
+            contains the following attributes
+                BC: DataContainer
+                    boundary conditions
 
-        system_parameters: DataContainer
-            boundary conditions
+                SP: DataContainer
+                    system_parameters
 
-        computational_methods: DataContainer
-            boundary conditions
+                CM: DataContainer
+                    computational_methods
 
-        initial_state_data: dict
-            contains 'lattice', 'mesh' and 'particle' keys each with a
-            corresponding list containing the elements.
+                SD: dict
+                    contains CUDS datasets e.g. 'lattice', 'mesh' and 'particle'
 
         Returns
         -------
@@ -60,10 +58,7 @@ class SimphonyAPI(object):
             a uuid string identifying the wrapper
         """
         return self._manager.create_wrapper(wrapper_type,
-                                            boundary_conditions,
-                                            system_parameters,
-                                            computational_methods,
-                                            initial_state_data,
+                                            cuds,
                                             **kwargs)
 
     def run_wrapper(self, wrapper_id):

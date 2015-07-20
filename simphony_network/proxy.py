@@ -6,6 +6,7 @@ The `ProxyEngine` which is defined here is the only class that end users
 need to know about. They have to wrap their normal wrapper instances inside
 this class to take advantage of SimPhoNy network layer.
 """
+import pickle
 import logging
 
 import msgpack_numpy as mn
@@ -31,12 +32,12 @@ class ProxyEngine(ABCModelingEngine):
             port for the server to listen at
     """
 
-    def __init__(self, cuds, engine, host, port=8020):
+    def __init__(self, cuds, engine_type, host, port=8020):
         # The CUDS object contains all the data regarding the model
         self._cuds = cuds
 
-        # Name of the engine to execute
-        self._engine_name = engine
+        # Type of the engine to execute
+        self._engine_type = engine_type
 
         # The remote host to connect to
         self._host = host
@@ -56,9 +57,6 @@ class ProxyEngine(ABCModelingEngine):
 
         # Keep the id of the remote wrapper internally.
         self._wrapper_id = None
-
-        # Initial state data
-        self._state_data = {}
 
     @property
     def BC(self):
@@ -108,26 +106,16 @@ class ProxyEngine(ABCModelingEngine):
         """
         raise NotImplementedError('Changing CM is not allowed after initializing the proxy.')
 
-#    def _get_wrapper_name(self):
-#        """Return the name of the wrapper."""
-#        return type(self._engine).__name__
-
     def run(self):
         """Run the wrapper on the remote host."""
         # Extract wrapper's name out of its type information
-        #wrapper_name = self._get_wrapper_name()
-        wrapper_name = self._engine_name
+        wrapper_name = self._engine_type
 
-        print self._cuds.SD
-        print self._cuds.BC
-        print self._cuds.SP
-        print self._cuds.CM
         # First create the wrapper along with passing model data
+        import pickle
+
         self._wrapper_id = self._remote.create_wrapper(wrapper_name,
-                                                       self._cuds.BC,
-                                                       self._cuds.SP,
-                                                       self._cuds.CM,
-                                                       self._cuds.SD)
+                                                       pickle.dumps(self._cuds))
         print('Got the id: %s' % self._wrapper_id)
         logging.info('Wrapper %s created.' % self._wrapper_id)
 
@@ -137,31 +125,38 @@ class ProxyEngine(ABCModelingEngine):
         # Return the id, just for fun
         return self._wrapper_id
 
-    def add_dataset(self, dataset):
-        """Add a dataset to the correspoinding modeling engine
+    def add_dataset(self, container):
+        """Add a CUDS container to the correspoinding modeling engine
 
         Parameters
         ----------
-        dataset : ABCLattice, ABCMesh or ABCParticles
-            dataset to be added.
+        container: {ABCMesh, ABCParticles, ABCLattice}
+            The CUDS container to add to the engine.
+
+        Raises
+        ------
+        TypeError:
+            If the container type is not supported by the engine.
+        ValueError:
+            If there is already a dataset with the given name.
 
         Returns
         -------
-        proxy : ABCLattice, ABCMesh or ABCParticles
-            A dataset to be used to update/query the internal representation
+        proxy: {ABCMesh, ABCParticles, ABCLattice}
+            A CUDS container to be used to update/query the internal representation
             stored inside the modeling-engine.
         """
         if self._wrapper_id is not None:
             raise Exception('Can not change state data after running the wrapper.')
 
-        # Add latice to the engine
-        self._engine.add_dataset(dataset)
+        if not isinstance(container, (ABCMesh, ABCLattice, ABCParticles)):
+            raise TypeError('Container type %s is not supported.' % type(container))
 
-        if dataset is ABCLattice:
-            # Queue the lattice to be added to the remote engine
-            if 'lattice' not in self._state_data:
-                self._state_data['lattice'] = []
-            self._state_data['lattice'].append(lattice)
+        if container.name in self._cuds.SD:
+            raise ValueError('There is already a dataset with given name.')
+
+        # Queue the dataset to be added to the remote engine
+        self._cuds.SD[container.name] = container
         print('Hey, I am proxy.py and here is the state data %s' % self._state_data)
 
     def remove_dataset(self, wrapper_id, name):
@@ -174,8 +169,10 @@ class ProxyEngine(ABCModelingEngine):
         name: str
             name of the dataset to be deleted
         """
-        raise NotImplementedError()
+        if self._wrapper_id is not None:
+            raise Exception('Can not change state data after running the wrapper.')
 
+        raise NotImplementedError()
 
     def get_dataset(self, wrapper_id, name):
         """Get a dataset from the correspoinding modeling engine

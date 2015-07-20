@@ -130,141 +130,44 @@ class SimphonyManager(object):
         wrapper = self._wrappers[wrapper_id]
         wrapper.run()
 
-    def add_lattice(self, wrapper_id, lattice):
-        """Add lattice to the correspoinding modeling engine
+    def add_dataset(self, wrapper_id, dataset):
+        """Add a dataset to the correspoinding modeling engine
 
         Parameters
         ----------
-        wrapper_id: str
+        id: str
             the modeling engine's id
-        lattice : ABCLattice
-            lattice to be added.
-
-        Returns
-        -------
-        proxy : ABCLattice
-            A lattice to be used to update/query the internal representation
-            stored inside the modeling-engine. See get_lattice for more
-            information.
-
+        dataset : ABCLattice, ABCMesh or ABCParticles
+            dataset to be added.
         """
         raise NotImplementedError()
 
-    def add_mesh(self, wrapper_id, mesh):
-        """Add mesh to the modeling engine
+    def remove_dataset(self, wrapper_id, name):
+        """Remove a dataset from the correspoinding modeling engine
 
         Parameters
         ----------
-        mesh: ABCMesh
-            mesh to be added.
-
-        Returns
-        -------
-        proxy : ABCMesh
-            A proxy mesh to be used to update/query the internal representation
-            stored inside the modeling-engine. See get_mesh for more
-            information.
-        """
-        raise NotImplementedError()
-
-    def add_particles(self, wrapper_id, particles):
-        """Add particle container to the corresponding modeling engine
-
-        Parameters
-        ----------
-        wrapper_id: str
-            the modeling engine's id
-        particles: ABCParticles
-            particle container to be added.
-
-        Returns
-        -------
-        ABCParticles
-            A particle container to be used to update/query the internal
-            representation stored inside the modeling-engine. See
-            get_particles for more information.
-
-        """
-        raise NotImplementedError()
-
-    def delete_lattice(self, name):
-        """Delete a lattice
-
-        Parameters
-        ----------
-        name: str
-            name of lattice to be deleted
-
-        """
-        raise NotImplementedError()
-
-    def delete_mesh(self, name):
-        """Delete a mesh
-
-        Parameters
-        ----------
-        name: str
-            name of mesh to be deleted
-
-        """
-        raise NotImplementedError()
-
-    def delete_particles(self, wrapper_id, name):
-        """Delete a particle container for the corresponding modeling engine
-
-        Parameters
-        ----------
-        wrapper_id: str
+        id: str
             the modeling engine's id
         name: str
-            name of particle container to be deleted
-
+            name of the dataset to be deleted
         """
         raise NotImplementedError()
 
-    def get_lattice(self, name):
-        """ Get lattice
 
-        The returned lattice can be used to query and update the state of the
-        lattice inside the modeling engine.
-
-        Returns
-        -------
-        ABCLattice
-
-        """
-        raise NotImplementedError()
-
-    def get_mesh(self, name):
-        """ Get mesh
-
-        The returned mesh can be used to query and update the state of the
-        mesh inside the modeling engine.
-
-        Returns
-        -------
-        ABCMesh
-
-        """
-        raise NotImplementedError()
-
-    def get_particles(self, wrapper_id, name):
-        """ Get particle container from the corresponding modeling engine.
-
-        The returned particle container can be used to query and update the
-        state of the particle container inside the modeling engine.
+    def get_dataset(self, wrapper_id, name):
+        """Get a dataset from the correspoinding modeling engine
 
         Parameters
         ----------
-        wrapper_id: str
+        id: str
             the modeling engine's id
         name: str
-            name of particle container
+            name of the dataset
 
         Returns
         -------
-        ABCParticles
-
+        ABCMesh or ABCLattice or ABCParticles
         """
         raise NotImplementedError()
 

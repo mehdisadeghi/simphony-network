@@ -27,10 +27,10 @@ class SimphonyFarm(object):
         env.hosts = self._hosts
         with settings(parallel=True):
             # Install virtual environment on remote host if it is not there already
-            execute(setup_env)
+            #execute(setup_env)
 
             # Deploy the dependencies to the remote virtual environment
-            execute(deploy)
+            #execute(deploy)
 
             # Start the server on remote machine
             execute(start)
@@ -44,10 +44,6 @@ class SimphonyFarm(object):
         t.setDaemon(True)
         # Start the thread
         t.start()
-
-        # Give it a few seconds to finish
-        #t.join()
-        #self._run()
 
 
 def run_server():

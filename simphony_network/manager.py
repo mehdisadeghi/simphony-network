@@ -6,13 +6,16 @@ manager has to keep the state of existing wrappers.
 """
 import uuid
 import pickle
+import cPickle
 import logging
 import pkg_resources
 import inspect
 
+import gevent
 from simphony.cuds.abc_modeling_engine import ABCModelingEngine
 
 from .proxy import ProxyEngine
+from .constants import WrapperState
 
 
 class SimphonyManager(object):
@@ -104,13 +107,16 @@ class SimphonyManager(object):
             wrapper.add_dataset(ds)
 
         # Keep the reference to the wrapper
-        self._wrappers[str(wrapper_id)] = wrapper
+        self._wrappers[str(wrapper_id)] = {'wrapper': wrapper}
 
         # Report back
         self.logger.info('Wrapper %s created for %s engine.' % (wrapper_id, wrapper_type))
 
         # Reutrn the wrapper id
         return str(wrapper_id)
+
+    def _get_wrapper(self, wrapper_id):
+        return self._wrappers[wrapper_id]['wrapper']
 
     def run_wrapper(self, wrapper_id):
         """Run the modeling engine recognized by the given id.
@@ -124,8 +130,11 @@ class SimphonyManager(object):
         wrapper_: str
             the modeling engine's id
         """
-        wrapper = self._wrappers[wrapper_id]
-        wrapper.run()
+        wrapper = self._get_wrapper(wrapper_id)
+        g = gevent.spawn(wrapper.run)
+        self._wrappers[wrapper_id]['greenlet'] = g
+        gevent.sleep(0)
+        #self._wrappers[wrapper_id]['state'] = WrapperState.running.value
 
     def add_dataset(self, wrapper_id, dataset):
         """Add a dataset to the correspoinding modeling engine
@@ -138,19 +147,6 @@ class SimphonyManager(object):
             dataset to be added.
         """
         raise NotImplementedError()
-
-    def remove_dataset(self, wrapper_id, name):
-        """Remove a dataset from the correspoinding modeling engine
-
-        Parameters
-        ----------
-        id: str
-            the modeling engine's id
-        name: str
-            name of the dataset to be deleted
-        """
-        raise NotImplementedError()
-
 
     def get_dataset(self, wrapper_id, name):
         """Get a dataset from the correspoinding modeling engine
@@ -165,6 +161,21 @@ class SimphonyManager(object):
         Returns
         -------
         ABCMesh or ABCLattice or ABCParticles
+        """
+        wrapper = self._get_wrapper(wrapper_id)
+        dataset = wrapper.get_dataset(name)
+        print dataset
+        return cPickle.dumps(dataset, protocol=2)
+
+    def remove_dataset(self, wrapper_id, name):
+        """Remove a dataset from the correspoinding modeling engine
+
+        Parameters
+        ----------
+        id: str
+            the modeling engine's id
+        name: str
+            name of the dataset to be deleted
         """
         raise NotImplementedError()
 
@@ -184,9 +195,12 @@ class SimphonyManager(object):
         if wrapper_id not in self._wrappers:
             raise Exception('Wrapper[%s] does not exist.' % wrapper_id)
 
-        # Instanciate the wrapper
-        #return self._wrappers[wrapper_id].get_state()
-
-        # We have to either introduce WrapperStore to keep track of wrapper states
-        # or add state to ABCModelingEngine interface
-        raise NotImplementedError()
+        # Return proper state based on the greenlet state
+        if not self._wrappers[wrapper_id]['greenlet'].ready():
+            return WrapperState.init.value
+        elif self._wrappers[wrapper_id]['greenlet'].exception:
+            return WrapperState.failed.value
+        elif self._wrappers[wrapper_id]['greenlet'].successful():
+            return WrapperState.done.value
+        else:
+            return WrapperState.running.value

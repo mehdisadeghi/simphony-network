@@ -7,7 +7,9 @@ need to know about. They have to wrap their normal wrapper instances inside
 this class to take advantage of SimPhoNy network layer.
 """
 import pickle
+import cPickle
 import logging
+import time
 
 import msgpack_numpy as mn
 mn.patch()
@@ -106,14 +108,18 @@ class ProxyEngine(ABCModelingEngine):
         """
         raise NotImplementedError('Changing CM is not allowed after initializing the proxy.')
 
-    def run(self):
-        """Run the wrapper on the remote host."""
+    def run(self, async=False):
+        """Run the wrapper on the remote host.
+
+        Parameters
+        ----------
+        async: bool
+            non-blocking call if set to True
+        """
         # Extract wrapper's name out of its type information
         wrapper_name = self._engine_type
 
         # First create the wrapper along with passing model data
-        import pickle
-
         self._wrapper_id = self._remote.create_wrapper(wrapper_name,
                                                        pickle.dumps(self._cuds))
         print('Got the id: %s' % self._wrapper_id)
@@ -121,6 +127,21 @@ class ProxyEngine(ABCModelingEngine):
 
         # Now issue the run command
         self._remote.run_wrapper(self._wrapper_id)
+
+        # If call is blocking, wait untill the wrapper finishes
+
+        if not async:
+            while True:
+                # Check for wrapper's status
+                state = self.get_state()
+                print('Current state is %s' % state)
+
+                # If it is not running anymore break the loop
+                if state != WrapperState.running.value:
+                    break
+
+                # Wait and try again
+                time.sleep(2)
 
         # Return the id, just for fun
         return self._wrapper_id
@@ -174,7 +195,7 @@ class ProxyEngine(ABCModelingEngine):
 
         raise NotImplementedError()
 
-    def get_dataset(self, wrapper_id, name):
+    def get_dataset(self, name):
         """Get a dataset from the correspoinding modeling engine
 
         Parameters
@@ -188,7 +209,13 @@ class ProxyEngine(ABCModelingEngine):
         -------
         ABCMesh or ABCLattice or ABCParticles
         """
-        raise NotImplementedError()
+        if self._wrapper_id is None:
+            raise Exception('No results exist yet. Wrapper not initialized.')
+
+        pickled_dataset = self._remote.get_dataset(self._wrapper_id,
+                                                   name)
+        print pickled_dataset
+        return pickle.loads(pickled_dataset)
 
     def iter_datasets(self, names=None):
         """Iterate over a subset or all of the lattices.

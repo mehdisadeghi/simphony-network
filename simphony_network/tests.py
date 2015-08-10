@@ -16,8 +16,10 @@ from simphony.cuds.lattice import make_cubic_lattice
 from simphony.engine import jyulb_internal_isothermal as lb
 from jyulb.internal.common.proxy_lattice import ProxyLattice
 from simphony.cuds.abc_modeling_engine import ABCModelingEngine
-
 from simphony.engine import proxy
+
+from simphony_network.model import CUDS
+from simphony_network.server import SimphonyFarm
 
 
 class SimphonyNetworkTestCase(unittest.TestCase):
@@ -56,29 +58,35 @@ class SimphonyNetworkTestCase(unittest.TestCase):
 
     def test_run_engine(self):
         """Running the jyu-lb modeling engine."""
-        engine = lb.JYUEngine()
+        #engine = lb.JYUEngine()
 
-        self.assertIsInstance(engine, ABCModelingEngine,
-                              "Error: not a ABCModelingEngine!")
+        #self.assertIsInstance(engine, ABCModelingEngine,
+        #                      "Error: not a ABCModelingEngine!")
+
+        # Create cuds
+        cuds = CUDS()
+        cuds._CM = {}
+        cuds._SP = {}
+        cuds._BC = {}
 
         # Computational Method data
-        engine.CM[CUBAExtension.COLLISION_OPERATOR] = self.coll_oper
-        engine.CM[CUBA.TIME_STEP] = self.dt
-        engine.CM[CUBA.NUMBER_OF_TIME_STEPS] = self.tsteps
+        cuds.CM[CUBAExtension.COLLISION_OPERATOR] = self.coll_oper
+        cuds.CM[CUBA.TIME_STEP] = self.dt
+        cuds.CM[CUBA.NUMBER_OF_TIME_STEPS] = self.tsteps
 
         # System Parameters data
-        engine.SP[CUBAExtension.REFERENCE_DENSITY] = self.rden
-        engine.SP[CUBA.KINEMATIC_VISCOSITY] = self.kvisc
-        engine.SP[CUBAExtension.GRAVITY] = (self.gx, self.gy, self.gz)
-        engine.SP[CUBAExtension.FLOW_TYPE] = self.flow_type
-        engine.SP[CUBAExtension.EXTERNAL_FORCING] = self.ext_frc
+        cuds.SP[CUBAExtension.REFERENCE_DENSITY] = self.rden
+        cuds.SP[CUBA.KINEMATIC_VISCOSITY] = self.kvisc
+        cuds.SP[CUBAExtension.GRAVITY] = (self.gx, self.gy, self.gz)
+        cuds.SP[CUBAExtension.FLOW_TYPE] = self.flow_type
+        cuds.SP[CUBAExtension.EXTERNAL_FORCING] = self.ext_frc
 
         # Boundary Conditions data
-        engine.BC[CUBA.VELOCITY] = {'open': 'periodic',
-                                    'wall': 'noSlip'}
+        cuds.BC[CUBA.VELOCITY] = {'open': 'periodic',
+                                  'wall': 'noSlip'}
 
-        engine.BC[CUBA.DENSITY] = {'open': 'periodic',
-                                   'wall': 'noFlux'}
+        cuds.BC[CUBA.DENSITY] = {'open': 'periodic',
+                                 'wall': 'noFlux'}
 
         # Configure a lattice
         lat = make_cubic_lattice("lattice1", self.dr,
@@ -99,15 +107,20 @@ class SimphonyNetworkTestCase(unittest.TestCase):
                 node.data[CUBA.DENSITY] = 1.0
             lat.update_node(node)
 
-        # Add lattice to the engine
-        engine.add_lattice(lat)
+        # Add lattice to the cuds
+        cuds.SD[lat.name] = lat
 
         # Run the case
         start_time = time.time()
 
+        # Prepare remote SimPhoNy servers
+        farm = SimphonyFarm(['pc-p115'])
+        farm.start()
+        print('Farm is starting...')
+
         # Create the proxy
-        proxy_engine = proxy.ProxyEngine(engine, host='pc-p115')
-        proxy_engine.run()
+        proxy_engine = proxy.ProxyEngine(cuds, 'JYUEngine', host='pc-p115')
+        proxy_engine.run(async=False)
 
         print('Passed the engine execution step.')
 
@@ -116,7 +129,11 @@ class SimphonyNetworkTestCase(unittest.TestCase):
         MFLUP = (self.nx-2)*self.ny*self.nz*self.tsteps/1e6
 
         # Analyse the results
-        proxy_lat = engine.get_lattice(lat.name)
+        proxy_lat = proxy_engine.get_dataset(lat.name)
+
+        # Don't go further for now
+        print proxy_lat
+        return
 
         # Compute the relative L2-error norm
         tot_diff2 = 0.0

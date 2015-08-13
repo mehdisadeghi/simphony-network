@@ -26,8 +26,8 @@ class CUDS(dict):
     """
     def __init__(self, bc=None, cm=None, sp=None, sd=None):
         self._BC = bc or DataContainer()
-        self._CM = cm or DataContainer()
-        self._SP = sp or DataContainer()
+        self._CM = cm or {} #DataContainer()
+        self._SP = sp or {} #DataContainer()
         self._SD = sd or {} #Some JYU containers are not included in cuba
 
     @property

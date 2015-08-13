@@ -15,6 +15,9 @@ import msgpack_numpy as mn
 mn.patch()
 import zerorpc
 from simphony.cuds.abc_modeling_engine import ABCModelingEngine
+from simphony.cuds.particles import ABCParticles
+from simphony.cuds.mesh import ABCMesh
+from simphony.cuds.lattice import ABCLattice
 
 from .constants import WrapperState
 from .fabfile import setup_env, deploy, start
@@ -46,6 +49,8 @@ class ProxyEngine(ABCModelingEngine):
 
         # The remote port to connect to
         self._port = port
+
+        start()
 
         # Create the proxy to the remote host.
         self._remote = \
@@ -178,7 +183,7 @@ class ProxyEngine(ABCModelingEngine):
 
         # Queue the dataset to be added to the remote engine
         self._cuds.SD[container.name] = container
-        print('Hey, I am proxy.py and here is the state data %s' % self._state_data)
+        print('Hey, I am proxy.py and here is the state data %s' % self._cuds.SD)
 
     def remove_dataset(self, wrapper_id, name):
         """Remove a dataset from the correspoinding modeling engine

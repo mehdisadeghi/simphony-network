@@ -17,7 +17,13 @@ from simphony.engine import jyulb_internal_isothermal as lb
 from jyulb.internal.common.proxy_lattice import ProxyLattice
 from simphony.cuds.abc_modeling_engine import ABCModelingEngine
 
-from simphony.engine.proxy import ProxyEngine
+from simphony.engine import proxy
+from simphony_network.model import CUDS
+
+
+import logging
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
 
 
 class ProxyEngineTestCase(unittest.TestCase):
@@ -50,13 +56,15 @@ class ProxyEngineTestCase(unittest.TestCase):
         os.chdir(self.temp_dir)
         self.addCleanup(self.cleanup)
 
+        self.cuds = CUDS()
+
     def cleanup(self):
         os.chdir(self.saved_path)
         shutil.rmtree(self.temp_dir)
 
     def test_run_engine(self):
         """Running the jyu-lb modeling engine."""
-        engine = ProxyEngine(lb.JYUEngine(), host='pc-115')
+        engine = proxy.ProxyEngine(self.cuds, 'JYUEngine', host='pc-p115')
 
         self.assertIsInstance(engine, ABCModelingEngine,
                               "Error: not a ABCModelingEngine!")
@@ -90,17 +98,17 @@ class ProxyEngineTestCase(unittest.TestCase):
                 node.data[CUBA.MATERIAL_ID] = ProxyLattice.SOLID_ENUM
             else:
                 node.data[CUBA.MATERIAL_ID] = ProxyLattice.FLUID_ENUM
-            lat.update_node(node)
+            lat.update_nodes([node])
 
         # Initialize flow variables at fluid lattice nodes
         for node in lat.iter_nodes():
             if node.data[CUBA.MATERIAL_ID] == ProxyLattice.FLUID_ENUM:
                 node.data[CUBA.VELOCITY] = (0, 0, 0)
                 node.data[CUBA.DENSITY] = 1.0
-            lat.update_node(node)
+            lat.update_nodes([node])
 
         # Add lattice to the engine
-        engine.add_lattice(lat)
+        engine.add_dataset(lat)
 
         # Run the case
         start_time = time.time()
@@ -112,7 +120,10 @@ class ProxyEngineTestCase(unittest.TestCase):
         MFLUP = (self.nx-2)*self.ny*self.nz*self.tsteps/1e6
 
         # Analyse the results
-        proxy_lat = engine.get_lattice(lat.name)
+        proxy_lat = engine.get_dataset(lat.name)
+
+        logging.debug('*******STOP*********')
+        return
 
         # Compute the relative L2-error norm
         tot_diff2 = 0.0

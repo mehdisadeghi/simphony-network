@@ -1,12 +1,7 @@
 """
 This module is part of simphony-network package.
-
-Here the public API of this package is defined.
 """
-import os
-
 from fabric.api import cd, env, prefix, run, task, settings
-from fabric.operations import put
 
 
 @task
@@ -27,10 +22,13 @@ def setup_env():
 def deploy():
     with prefix('. ~/.virtualenvs/simphony/bin/activate'):
         with cd('~/.virtualenvs/simphony'):
-            abspath_requirements = os.path.abspath('../requirements.txt')
-            put(abspath_requirements, '~/.virtualenvs/simphony')
-            run('pip install -r requirements.txt')
+            run('git clone git@bitbucket.org:idhem/simphony-network.git')
+            #run('cd simphony-network && pip install -r requirements.txt')
+            #abspath_requirements = os.path.abspath('../requirements.txt')
+            #put(abspath_requirements, '~/.virtualenvs/simphony')
+            #run('pip install -r requirements.txt')
         with cd('~/.virtualenvs/simphony/simphony-network'):
+            run('pip install -r requirements.txt')
             run('python setup.py install')
 
 

@@ -1,0 +1,6 @@
+[console_scripts]
+simphony = simphony_network.server:run_server
+
+[simphony.engine]
+proxy = simphony_network.proxy
+

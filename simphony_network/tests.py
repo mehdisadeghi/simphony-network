@@ -9,17 +9,21 @@ import os
 import tempfile
 import shutil
 import unittest
+import logging
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
 
 from simphony.core.cuba import CUBA
+from simphony.cuds.abc_modeling_engine import ABCModelingEngine
 from jyulb.cuba_extension import CUBAExtension
 from simphony.cuds.lattice import make_cubic_lattice
 from simphony.engine import jyulb_internal_isothermal as lb
 from jyulb.internal.common.proxy_lattice import ProxyLattice
-from simphony.cuds.abc_modeling_engine import ABCModelingEngine
 from simphony.engine import proxy
 
-from simphony_network.model import CUDS
-from simphony_network.server import SimphonyFarm
+from .model import CUDS
+from .server import SimphonyFarm
 
 
 class SimphonyNetworkTestCase(unittest.TestCase):
@@ -58,10 +62,6 @@ class SimphonyNetworkTestCase(unittest.TestCase):
 
     def test_run_engine(self):
         """Running the jyu-lb modeling engine."""
-        #engine = lb.JYUEngine()
-
-        #self.assertIsInstance(engine, ABCModelingEngine,
-        #                      "Error: not a ABCModelingEngine!")
 
         # Create cuds
         cuds = CUDS()
@@ -98,14 +98,14 @@ class SimphonyNetworkTestCase(unittest.TestCase):
                 node.data[CUBA.MATERIAL_ID] = ProxyLattice.SOLID_ENUM
             else:
                 node.data[CUBA.MATERIAL_ID] = ProxyLattice.FLUID_ENUM
-            lat.update_node(node)
+            lat.update_nodes([node])
 
         # Initialize flow variables at fluid lattice nodes
         for node in lat.iter_nodes():
             if node.data[CUBA.MATERIAL_ID] == ProxyLattice.FLUID_ENUM:
                 node.data[CUBA.VELOCITY] = (0, 0, 0)
                 node.data[CUBA.DENSITY] = 1.0
-            lat.update_node(node)
+            lat.update_nodes([node])
 
         # Add lattice to the cuds
         cuds.SD[lat.name] = lat
@@ -116,13 +116,19 @@ class SimphonyNetworkTestCase(unittest.TestCase):
         # Prepare remote SimPhoNy servers
         farm = SimphonyFarm(['pc-p115'])
         farm.start()
-        print('Farm is starting...')
+        logging.debug('Farm is starting...')
+
+        import time as t
+        t.sleep(5)
 
         # Create the proxy
         proxy_engine = proxy.ProxyEngine(cuds, 'JYUEngine', host='pc-p115')
         proxy_engine.run(async=False)
 
-        print('Passed the engine execution step.')
+        self.assertIsInstance(proxy_engine, ABCModelingEngine,
+                              "Error: not a ABCModelingEngine!")
+
+        logging.debug('Passed the engine execution step.')
 
         end_time = time.time()
         comp_time = end_time - start_time
@@ -132,16 +138,21 @@ class SimphonyNetworkTestCase(unittest.TestCase):
         proxy_lat = proxy_engine.get_dataset(lat.name)
 
         # Don't go further for now
-        print proxy_lat
-        return
+        logging.debug('Got the proxy lattice back %s' % proxy_lat)
+        import pdb
+
+        #logging.debug('*******STOP*********')
+        #return
 
         # Compute the relative L2-error norm
         tot_diff2 = 0.0
         tot_ana2 = 0.0
         tot_ux = 0.0
         tot_uy = 0.0
+        pdb.set_trace()
         for node in proxy_lat.iter_nodes():
             if node.data[CUBA.MATERIAL_ID] == ProxyLattice.FLUID_ENUM:
+
                 sim_ux = node.data[CUBA.VELOCITY][0]
                 sim_uy = node.data[CUBA.VELOCITY][1]
                 sim_uz = node.data[CUBA.VELOCITY][2]
@@ -153,9 +164,9 @@ class SimphonyNetworkTestCase(unittest.TestCase):
                 tot_uy = tot_uy + sim_uy
 
         rel_l2_error = math.sqrt(tot_diff2/tot_ana2)
-        print ('\nRelative L2-error norm = %e' % (rel_l2_error))
-        print 'Comp.time (s) = {}, MFLUPS = {}'.format(comp_time,
-                                                       MFLUP/comp_time)
+        logging.debug ('\nRelative L2-error norm = %e' % (rel_l2_error))
+        logging.debug('Comp.time (s) = {}, MFLUPS = {}'.format(comp_time,
+                                                               MFLUP/comp_time))
 
         self.assertTrue(rel_l2_error < 1.0e-10)
         self.assertTrue(math.fabs(tot_ux) < 1.0e-10)

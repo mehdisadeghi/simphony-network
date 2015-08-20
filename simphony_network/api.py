@@ -4,7 +4,6 @@ This module is part of simphony-network package.
 The public API of the running simphony application is defined here.
 Only these methods will be available remotely.
 """
-import zerorpc
 
 
 class SimphonyAPI(object):
@@ -25,8 +24,8 @@ class SimphonyAPI(object):
         return msg
 
     def create_wrapper(self, wrapper_type,
-                             cuds,
-                             **kwargs):
+                       cuds,
+                       **kwargs):
         """Create a new wrapper of given type and add it to the wrapper store.
 
         Parameters

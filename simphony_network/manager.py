@@ -5,16 +5,14 @@ Manager is responsible to handle incoming commands. Moreover,
 manager has to keep the state of existing wrappers.
 """
 import uuid
-import pickle
-import cPickle
 import logging
 import pkg_resources
 import inspect
 
 import gevent
 from simphony.cuds.abc_modeling_engine import ABCModelingEngine
+from cloud.serialization import cloudpickle as pickle
 
-from .proxy import ProxyEngine
 from .constants import WrapperState
 
 
@@ -35,6 +33,7 @@ class SimphonyManager(object):
         # Find any subclass of ABCModelingEngine which is loaded into
         # `simphony.engine` entry point
         self._find_wrappers()
+        logging.debug('Loaded SimPhoNy engines: %s' % self._wrapper_mapping)
 
     def _find_wrappers(self):
         """Find all the loaded wrappers in SimPhoNy entry point"""
@@ -42,18 +41,18 @@ class SimphonyManager(object):
         for ep in pkg_resources.iter_entry_points(group="simphony.engine"):
             # Load the modules
             module = ep.load()
-            # Iterete over the module contents
+            # Iterate over the module contents
             for k, v in module.__dict__.iteritems():
                 # If the item is an Engine class add it to the mapping
-                if inspect.isclass(v) and issubclass(v, ABCModelingEngine) \
-                    and v not in (ABCModelingEngine, ProxyEngine):
-                    # Add the type to the mappping dictionary
+                if inspect.isclass(v) and issubclass(v, ABCModelingEngine):# \
+                        #and v not in (ABCModelingEngine, ProxyEngine):
+                    # Add the type to the mapping dictionary
                     self._wrapper_mapping[k] = v
         self.logger.info('%s wrappers loaded from simphony.engine entry points.' % len(self._wrapper_mapping))
 
     def create_wrapper(self, wrapper_type,
-                             cuds,
-                             **kwargs):
+                       cuds,
+                       **kwargs):
         """Create a new wrapper of given type and add it to the wrapper store.
 
         Parameters
@@ -88,16 +87,16 @@ class SimphonyManager(object):
         # Create a new uuid
         wrapper_id = uuid.uuid4()
 
-        # Instanciate the wrapper
+        # Instantiate the wrapper
         wrapper = self._wrapper_mapping[wrapper_type]()
 
         # Unpickle cuds
         cuds = pickle.loads(cuds)
 
         # Assign model data to the wrapper
-        wrapper.BC = cuds.BC #boundary_conditions
-        wrapper.CM = cuds.CM #computational_methods
-        wrapper.SP = cuds.SP #system_parameters
+        wrapper.BC = cuds.BC  # boundary_conditions
+        wrapper.CM = cuds.CM  # computational_methods
+        wrapper.SP = cuds.SP  # system_parameters
 
         # Report back
         self.logger.debug('Model data assigned to the wrapper %s' % wrapper_id)
@@ -164,8 +163,8 @@ class SimphonyManager(object):
         """
         wrapper = self._get_wrapper(wrapper_id)
         dataset = wrapper.get_dataset(name)
-        print dataset
-        return cPickle.dumps(dataset, protocol=2)
+        logging.debug('going to pickle before sending', dataset)
+        return pickle.dumps(dataset)
 
     def remove_dataset(self, wrapper_id, name):
         """Remove a dataset from the correspoinding modeling engine

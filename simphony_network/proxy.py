@@ -6,8 +6,7 @@ The `ProxyEngine` which is defined here is the only class that end users
 need to know about. They have to wrap their normal wrapper instances inside
 this class to take advantage of SimPhoNy network layer.
 """
-import pickle
-import cPickle
+#import pickle
 import logging
 import time
 
@@ -18,9 +17,9 @@ from simphony.cuds.abc_modeling_engine import ABCModelingEngine
 from simphony.cuds.particles import ABCParticles
 from simphony.cuds.mesh import ABCMesh
 from simphony.cuds.lattice import ABCLattice
+from cloud.serialization import cloudpickle as pickle
 
 from .constants import WrapperState
-from .fabfile import setup_env, deploy, start
 
 
 class ProxyEngine(ABCModelingEngine):
@@ -49,8 +48,6 @@ class ProxyEngine(ABCModelingEngine):
 
         # The remote port to connect to
         self._port = port
-
-        start()
 
         # Create the proxy to the remote host.
         self._remote = \
@@ -124,10 +121,13 @@ class ProxyEngine(ABCModelingEngine):
         # Extract wrapper's name out of its type information
         wrapper_name = self._engine_type
 
+        logging.debug('going to pickle')
+        pickled_cuds = pickle.dumps(self._cuds)
+
         # First create the wrapper along with passing model data
         self._wrapper_id = self._remote.create_wrapper(wrapper_name,
-                                                       pickle.dumps(self._cuds))
-        print('Got the id: %s' % self._wrapper_id)
+                                                       pickled_cuds)
+        logging.debug('Got the id: %s' % self._wrapper_id)
         logging.info('Wrapper %s created.' % self._wrapper_id)
 
         # Now issue the run command
@@ -139,7 +139,7 @@ class ProxyEngine(ABCModelingEngine):
             while True:
                 # Check for wrapper's status
                 state = self.get_state()
-                print('Current state is %s' % state)
+                logging.debug('Current state is %s' % state)
 
                 # If it is not running anymore break the loop
                 if state != WrapperState.running.value:
@@ -183,7 +183,7 @@ class ProxyEngine(ABCModelingEngine):
 
         # Queue the dataset to be added to the remote engine
         self._cuds.SD[container.name] = container
-        print('Hey, I am proxy.py and here is the state data %s' % self._cuds.SD)
+        logging.debug('Dataset [%s] added to the CUDS.' % self._cuds.SD)
 
     def remove_dataset(self, wrapper_id, name):
         """Remove a dataset from the correspoinding modeling engine
@@ -219,7 +219,7 @@ class ProxyEngine(ABCModelingEngine):
 
         pickled_dataset = self._remote.get_dataset(self._wrapper_id,
                                                    name)
-        print pickled_dataset
+
         return pickle.loads(pickled_dataset)
 
     def iter_datasets(self, names=None):

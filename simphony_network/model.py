@@ -3,9 +3,9 @@ This module is part of simphony-network package.
 
 """
 from simphony.core.data_container import DataContainer
-from simphony.cuds.abstractlattice import ABCLattice
-from simphony.cuds.abstractmesh import ABCMesh
-from simphony.cuds.abstractparticles import ABCParticles
+from simphony.cuds.lattice import ABCLattice
+from simphony.cuds.mesh import ABCMesh
+from simphony.cuds.particles import ABCParticles
 
 
 class CUDS(dict):

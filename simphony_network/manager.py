@@ -163,7 +163,12 @@ class SimphonyManager(object):
         """
         wrapper = self._get_wrapper(wrapper_id)
         dataset = wrapper.get_dataset(name)
-        logging.debug('going to pickle before sending', dataset)
+        logging.debug('going to pickle dataset %s before sending %s' % (name, dataset))
+        for node in dataset.iter_nodes():
+            print 'Node index: %s' % str(node.index)
+            print 'Node data: %s' % node.data
+        import pdb
+        #pdb.set_trace()
         return pickle.dumps(dataset)
 
     def remove_dataset(self, wrapper_id, name):

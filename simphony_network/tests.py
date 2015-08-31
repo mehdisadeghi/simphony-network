@@ -149,8 +149,13 @@ class SimphonyNetworkTestCase(unittest.TestCase):
         tot_ana2 = 0.0
         tot_ux = 0.0
         tot_uy = 0.0
-        pdb.set_trace()
+
         for node in proxy_lat.iter_nodes():
+            print 'Node index: %s' % str(node.index)
+            print 'Node data: %s' % node.data
+
+        for node in proxy_lat.iter_nodes():
+            pdb.set_trace()
             if node.data[CUBA.MATERIAL_ID] == ProxyLattice.FLUID_ENUM:
 
                 sim_ux = node.data[CUBA.VELOCITY][0]
@@ -173,11 +178,11 @@ class SimphonyNetworkTestCase(unittest.TestCase):
         self.assertTrue(math.fabs(tot_uy) < 1.0e-10)
 
         # Test iteration and removal of lattices
-        for lat in engine.iter_lattices():
+        for lat in proxy_engine.iter_datasets():
             self.assertEqual(lat, proxy_lat)
 
-        engine.delete_lattice(proxy_lat.name)
-        none_lat = engine.get_lattice(proxy_lat.name)
+        proxy_engine.delete_dataset(proxy_lat.name)
+        none_lat = proxy_engine.get_dataset(proxy_lat.name)
 
         self.assertEqual(none_lat, None)
 

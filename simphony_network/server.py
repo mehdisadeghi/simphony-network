@@ -8,6 +8,10 @@ from fabric.api import cd, env, prefix, run, task, settings, execute
 
 from simphony_network import SimphonyApplication
 from simphony_network.fabfile import setup_env, deploy, start
+import logging
+
+root_logger = logging.getLogger('root')
+root_logger.setLevel(logging.DEBUG)
 
 
 class SimphonyFarm(object):
@@ -49,6 +53,12 @@ class SimphonyFarm(object):
 def run_server():
     # Instanciate the application with default configuration
     app = SimphonyApplication()
+    logging.getLogger().setLevel(logging.DEBUG)
+    print 'Starting simphony application'
+    print 'Current logger is: %s' % logging.getLogger().name
+    print 'Logger level is: %s' % logging.getLogger().level
+    print 'Logger levels are: %s' % logging._levelNames
+
 
     # Run the application on default port and external IP
     app.run()

@@ -15,13 +15,11 @@ setup(
                       'zerorpc>=0.5.1',
                       'fabric>=1.10.2',
                       'blinker>=1.3'],
-    dependency_links = ['git+https://github.com/simphony/simphony-common.git#egg=simphony'],
-    entry_points = {
+    dependency_links=['git+https://github.com/simphony/simphony-common.git#egg=simphony'],
+    entry_points={
         'console_scripts': [
-            'simphony = simphony_network.server:run_server',
-             ],
+            'simphony = simphony_network.server:run_server'],
         'simphony.engine': [
-            'proxy = simphony_network.proxy'
-             ],
-        },
+            'proxy = simphony_network.proxy']
+        }
 )
